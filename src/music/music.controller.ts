@@ -45,13 +45,16 @@ export class MusicController {
 
 	@Get()
 	async findAll(
-		@Query('page', ParseIntPipe) page: number = 1,
-		@Query('limit', ParseIntPipe) limit: number = 10,
+		@Query('page', new ParseIntPipe({ optional: true })) page?: number,
+		@Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
 	): Promise<
 		MusicDocument[] | { data: MusicDocument[]; total: number; page: number; totalPages: number }
 	> {
-		if (page && limit) {
-			return await this.musicService.findWithPagination(page, limit);
+		const pageNum = page || 1;
+		const limitNum = limit || 10;
+
+		if (page || limit) {
+			return await this.musicService.findWithPagination(pageNum, limitNum);
 		}
 		return await this.musicService.findAll();
 	}

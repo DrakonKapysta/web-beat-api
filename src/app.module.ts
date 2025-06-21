@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { getMongoConfig } from './configs/mongo.config';
 import { MusicModule } from './music/music.module';
 import { FileModule } from './file/file.module';
+import { PlaylistModule } from './playlist/playlist.module';
 
 @Module({
 	imports: [
@@ -19,6 +20,7 @@ import { FileModule } from './file/file.module';
 		AuthModule,
 		MusicModule,
 		FileModule,
+		PlaylistModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

@@ -1,28 +1,12 @@
-import {
-	IsIn,
-	IsInt,
-	IsNotEmpty,
-	IsNumber,
-	IsObject,
-	IsOptional,
-	IsString,
-	IsUrl,
-	Length,
-	Matches,
-	Max,
-	Min,
-} from 'class-validator';
+import { IsIn, IsNotEmpty, IsObject, IsOptional, IsString, IsUrl, Length } from 'class-validator';
 import { GENRES } from '../constants/genres.constant';
 import { Transform, Type } from 'class-transformer';
 
 export class UploadMusicDto {
-	@IsString({ message: 'File name must be a string' })
-	@IsNotEmpty({ message: 'File name cannot be empty' })
-	@Length(1, 100, { message: 'File name must be between 1 and 100 characters' })
-	@Matches(/^[^<>:"/\\|?*]+\.(mp3|wav|flac|m4a|aac)$/i, {
-		message: 'Invalid file name format or extension (supported: mp3, wav, flac, m4a, aac)',
-	})
-	fileName: string;
+	@IsString({ message: 'Title name must be a string' })
+	@IsNotEmpty({ message: 'Title name cannot be empty' })
+	@Length(1, 100, { message: 'Title name must be between 1 and 100 characters' })
+	title: string;
 
 	@IsString({ message: 'Author must be a string' })
 	@IsNotEmpty({ message: 'Author cannot be empty' })

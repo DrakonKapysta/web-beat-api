@@ -6,7 +6,7 @@ export type MusicDocument = HydratedDocument<MusicModel>;
 @Schema({ timestamps: true })
 export class MusicModel {
 	@Prop({ required: true })
-	fileName: string;
+	title: string;
 
 	@Prop({ required: true })
 	author: string;
@@ -23,9 +23,6 @@ export class MusicModel {
 	@Prop()
 	posterUrl?: string;
 
-	@Prop({ required: true })
-	filePath: string;
-
 	@Prop({ type: Object })
 	metadata?: Record<string, any>;
 }
@@ -38,7 +35,7 @@ MusicSchema.index({ author: 1, year: -1 });
 
 MusicSchema.index(
 	{
-		fileName: 'text',
+		title: 'text',
 		author: 'text',
 		album: 'text',
 		genre: 'text',
@@ -46,7 +43,7 @@ MusicSchema.index(
 	{
 		name: 'music_text_search',
 		weights: {
-			fileName: 10,
+			title: 10,
 			author: 8,
 			album: 5,
 			genre: 3,

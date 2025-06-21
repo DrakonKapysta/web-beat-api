@@ -43,7 +43,7 @@ export class MusicRepository {
 				$or: [
 					{ author: { $regex: query, $options: 'i' } },
 					{ album: { $regex: query, $options: 'i' } },
-					{ fileName: { $regex: query, $options: 'i' } },
+					{ title: { $regex: query, $options: 'i' } },
 					{ genre: { $regex: query, $options: 'i' } },
 				],
 			})

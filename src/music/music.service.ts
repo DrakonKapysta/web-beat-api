@@ -4,6 +4,7 @@ import { FileService } from 'src/file/file.service';
 import { UploadMusicDto } from './dto/upload-music.dto';
 import { MusicDocument } from './music.model';
 import { Response } from 'express';
+import { extname } from 'path';
 
 @Injectable()
 export class MusicService {
@@ -28,14 +29,20 @@ export class MusicService {
 		const filePath = await this.fileService.saveFile(file.originalname, file.buffer);
 
 		const musicData = {
-			fileName: file.originalname,
+			title: uploadMusicDto.title,
 			author: uploadMusicDto.author,
 			album: uploadMusicDto.album,
 			genre: uploadMusicDto.genre,
 			year: uploadMusicDto.year,
 			posterUrl: uploadMusicDto.posterUrl,
-			filePath: filePath,
-			metadata: uploadMusicDto.metadata || {},
+			metadata: {
+				...uploadMusicDto.metadata,
+				filePath,
+				extension: extname(file.originalname).slice(1),
+				originalName: file.originalname,
+				mimeType: file.mimetype,
+				fileSize: file.size,
+			},
 		};
 
 		return await this.musicRepository.create(musicData);
@@ -93,7 +100,7 @@ export class MusicService {
 			throw new NotFoundException(`Music with ID ${id} not found`);
 		}
 		try {
-			await this.fileService.deleteFile(music.fileName);
+			await this.fileService.deleteFile(music.title);
 		} catch (error) {
 			console.error('Error deleting file:', error);
 		}
