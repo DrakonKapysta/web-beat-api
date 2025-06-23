@@ -109,6 +109,7 @@ export class MusicController {
 	}
 
 	@Put(':id')
+	@UseGuards(JwtCombineAuthGuard)
 	async update(
 		@Param('id') id: string,
 		@Body() updateData: Partial<UploadMusicDto>,
@@ -117,6 +118,7 @@ export class MusicController {
 	}
 
 	@Delete(':id')
+	@UseGuards(JwtCombineAuthGuard)
 	@HttpCode(200)
 	async remove(@Param('id') id: string): Promise<{ id: string; message: string } | null> {
 		const deletedTrack = await this.musicService.remove(id);
