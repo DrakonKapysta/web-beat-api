@@ -5,6 +5,7 @@ import {
 	HttpException,
 	HttpStatus,
 	Post,
+	Res,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { AuthDto } from './dto/auth.dto';
 import { AuthService } from './auth.service';
 import { ALREADY_EXISTS_ERROR } from './auth.constants';
 import { UserModel } from './user.model';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -28,8 +30,18 @@ export class AuthController {
 	@UsePipes(new ValidationPipe())
 	@HttpCode(200)
 	@Post('login')
-	async login(@Body() { login, password }: AuthDto): Promise<{ access_token: string }> {
+	async login(
+		@Body() { login, password }: AuthDto,
+		@Res({ passthrough: true }) response: Response,
+	): Promise<{ access_token: string }> {
 		const { _id, email } = await this.authService.validateUser(login, password);
-		return this.authService.login(_id.toString(), email);
+
+		const { access_token } = await this.authService.login(_id.toString(), email);
+
+		response.cookie('access_token', access_token, {
+			httpOnly: true,
+		});
+
+		return { access_token };
 	}
 }

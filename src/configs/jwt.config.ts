@@ -5,7 +5,7 @@ export const getJWTConfig = async (configService: ConfigService): Promise<JwtMod
 	return {
 		secret: configService.get('JWT_SECRET'),
 		signOptions: {
-			expiresIn: configService.get('JWT_EXPIRATION') || '24h',
+			expiresIn: configService.get('JWT_EXPIRATION') || '1h',
 		},
 	};
 };

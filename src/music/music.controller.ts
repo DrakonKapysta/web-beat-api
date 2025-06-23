@@ -13,6 +13,7 @@ import {
 	Query,
 	Res,
 	UploadedFile,
+	UseGuards,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
@@ -24,6 +25,7 @@ import { FileService } from 'src/file/file.service';
 import { Response } from 'express';
 import { UploadMusicDto } from './dto/upload-music.dto';
 import { MusicDocument } from './music.model';
+import { JwtCombineAuthGuard } from 'src/auth/guards/jwt.combine.guard';
 
 @Controller('music')
 @UsePipes(new ValidationPipe())
@@ -72,6 +74,7 @@ export class MusicController {
 	}
 
 	@Post('upload')
+	@UseGuards(JwtCombineAuthGuard)
 	@UseInterceptors(FileInterceptor('file'))
 	@HttpCode(201)
 	async uploadMusic(

@@ -13,6 +13,9 @@ export class UserModel {
 
 	@Prop()
 	passwordHash: string;
+
+	@Prop({ type: [{ type: Types.ObjectId, ref: 'Music' }], default: [] })
+	likedTracks: Types.ObjectId[];
 }
 
 export const UserShema = SchemaFactory.createForClass(UserModel);
