@@ -3,7 +3,7 @@ import { Request } from 'express';
 import { Types } from 'mongoose';
 
 export interface UserDecoratorPayload extends Express.User {
-	_id: Types.ObjectId;
+	id: string | Types.ObjectId;
 	email: string;
 }
 
@@ -11,6 +11,7 @@ export const User = createParamDecorator(
 	(data: keyof UserDecoratorPayload, ctx: ExecutionContext) => {
 		const req = ctx.switchToHttp().getRequest<Request>();
 		const user = req.user as UserDecoratorPayload;
+		console.log(user);
 		return data ? user?.[data] : user;
 	},
 );

@@ -73,4 +73,11 @@ export class PlaylistService {
 	): Promise<{ data: PlaylistDocument[]; total: number; page: number; totalPages: number }> {
 		return await this.playlistRepository.findWithPagination(page, limit);
 	}
+
+	async searchPlaylists(query: string, userId: string): Promise<PlaylistDocument[]> {
+		if (!query || query.trim().length === 0) {
+			throw new NotFoundException('Search query cannot be empty');
+		}
+		return await this.playlistRepository.search(query, userId);
+	}
 }

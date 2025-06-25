@@ -14,10 +14,20 @@ import { PlaylistService } from './playlist.service';
 import { PlaylistDocument } from './playlist.model';
 import { PlaylistCreateDto } from './dto/playlist.create.dto';
 import { JwtCombineAuthGuard } from 'src/auth/guards/jwt.combine.guard';
+import { User } from 'src/decorators/user.decorator';
 
 @Controller('playlist')
 export class PlaylistController {
 	constructor(private readonly playlistService: PlaylistService) {}
+
+	@Get('search')
+	@UseGuards(JwtCombineAuthGuard)
+	async searchPlaylists(
+		@Query('query') query: string,
+		@User('id') userId: string,
+	): Promise<PlaylistDocument[]> {
+		return this.playlistService.searchPlaylists(query, userId);
+	}
 
 	@Get()
 	async findAll(
@@ -42,17 +52,18 @@ export class PlaylistController {
 		return this.playlistService.findById(id);
 	}
 
-	@Get(':userId')
+	@Get('byUserId/:userId')
 	async findByUserId(@Param('userId') userId: string): Promise<PlaylistDocument[]> {
 		return this.playlistService.findByUserId(userId);
 	}
+
 	@Post()
 	@UseGuards(JwtCombineAuthGuard)
 	async createPlaylist(
 		@Body() createPlaylistDto: PlaylistCreateDto,
-		@Req() req,
+		@User('id') userId: string,
 	): Promise<PlaylistDocument> {
-		return await this.playlistService.create(req.user.id || '', createPlaylistDto);
+		return this.playlistService.create(userId, createPlaylistDto);
 	}
 
 	@Post(':id/tracks/:trackId')
@@ -60,17 +71,18 @@ export class PlaylistController {
 	async addTrackToPlaylist(
 		@Param('id') playlistId: string,
 		@Param('trackId') trackId: string,
-		@Req() req,
+		@User('id') userId: string,
 	): Promise<PlaylistDocument | null> {
-		return await this.playlistService.addTrack(playlistId, trackId, req.user.id);
+		return this.playlistService.addTrack(playlistId, trackId, userId);
 	}
+
 	@Delete(':id/tracks/:trackId')
 	@UseGuards(JwtCombineAuthGuard)
 	async removeTrackFromPlaylist(
 		@Param('id') playlistId: string,
 		@Param('trackId') trackId: string,
-		@Req() req,
+		@User('id') userId: string,
 	): Promise<PlaylistDocument | null> {
-		return await this.playlistService.removeTrack(playlistId, trackId, req.user.id);
+		return this.playlistService.removeTrack(playlistId, trackId, userId);
 	}
 }

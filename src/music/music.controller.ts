@@ -46,6 +46,7 @@ export class MusicController {
 	}
 
 	@Get()
+	@UseGuards(JwtCombineAuthGuard)
 	async findAll(
 		@Query('page', new ParseIntPipe({ optional: true })) page?: number,
 		@Query('limit', new ParseIntPipe({ optional: true })) limit?: number,

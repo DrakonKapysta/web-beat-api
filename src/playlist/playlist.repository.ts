@@ -38,6 +38,16 @@ export class PlaylistRepository {
 		return this.playlistModel.findById(id).populate('tracks.trackId').exec();
 	}
 
+	async search(query: string, userId: string): Promise<PlaylistDocument[]> {
+		return this.playlistModel.find({
+			userId,
+			$or: [
+				{ name: { $regex: query, $options: 'i' } },
+				{ description: { $regex: query, $options: 'i' } },
+			],
+		});
+	}
+
 	async findByUserId(userId: string): Promise<PlaylistDocument[]> {
 		return this.playlistModel.find({ userId }).populate('tracks.trackId').exec();
 	}
