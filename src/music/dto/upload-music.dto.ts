@@ -28,13 +28,6 @@ export class UploadMusicDto {
 	year: number;
 
 	@IsOptional()
-	poster?: Express.Multer.File;
-
-	@IsUrl({}, { message: 'Invalid URL format for poster' })
-	@IsOptional()
-	posterUrl?: string;
-
-	@IsOptional()
 	@IsObject({ message: 'Metadata must be an object' })
 	metadata?: Record<string, any>;
 }

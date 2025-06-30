@@ -8,6 +8,8 @@ import { getMongoConfig } from './configs/mongo.config';
 import { MusicModule } from './music/music.module';
 import { FileModule } from './file/file.module';
 import { PlaylistModule } from './playlist/playlist.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
 	imports: [
@@ -21,6 +23,11 @@ import { PlaylistModule } from './playlist/playlist.module';
 		MusicModule,
 		FileModule,
 		PlaylistModule,
+		ServeStaticModule.forRoot({
+			rootPath: join(__dirname, '..', 'static/posters'),
+			serveRoot: '/static/posters',
+			exclude: ['/api*'],
+		}),
 	],
 	controllers: [AppController],
 	providers: [AppService],

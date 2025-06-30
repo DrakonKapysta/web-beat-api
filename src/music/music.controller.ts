@@ -13,19 +13,22 @@ import {
 	Query,
 	Res,
 	UploadedFile,
+	UploadedFiles,
 	UseGuards,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
 import { MusicService } from './music.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { FileSizeValidationPipe } from 'src/pipes/file-size-validation.pipe';
 import { FileService } from 'src/file/file.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { UploadMusicDto } from './dto/upload-music.dto';
 import { MusicDocument } from './music.model';
 import { JwtCombineAuthGuard } from 'src/auth/guards/jwt.combine.guard';
+import { diskStorage, Multer } from 'multer';
+import { extname } from 'path';
 
 @Controller('music')
 @UsePipes(new ValidationPipe())
@@ -35,9 +38,9 @@ export class MusicController {
 		private readonly fileService: FileService,
 	) {}
 
-	@Get('stream/:fileName')
-	async streamMusic(@Param('fileName') fileName: string, @Res() res: Response): Promise<void> {
-		await this.musicService.streamMusic(fileName, res);
+	@Get('stream/:hash')
+	async streamMusic(@Param('hash') hash: string, @Res() res: Response): Promise<void> {
+		await this.musicService.streamMusic(hash, res);
 	}
 
 	@Get('search')
@@ -76,17 +79,52 @@ export class MusicController {
 
 	@Post('upload')
 	@UseGuards(JwtCombineAuthGuard)
-	@UseInterceptors(FileInterceptor('file'))
+	@UseInterceptors(
+		FileFieldsInterceptor(
+			[
+				{ name: 'music', maxCount: 1 },
+				{ name: 'poster', maxCount: 1 },
+			],
+			{
+				storage: diskStorage({
+					destination: (req: Request, file: Express.Multer.File, callback) => {
+						if (file.fieldname === 'music') {
+							callback(null, 'uploads/music');
+						} else if (file.fieldname === 'poster') {
+							callback(null, 'static/posters');
+						}
+					},
+					filename: (req: Request, file: Express.Multer.File, callback) => {
+						const timestamp = Date.now();
+						const ext = extname(file.originalname);
+						callback(null, `${file.fieldname}_${timestamp}${ext}`);
+					},
+				}),
+				fileFilter: (req: Request, file: Express.Multer.File, callback) => {
+					if (file.fieldname === 'music' && file.mimetype.startsWith('audio/')) {
+						callback(null, true);
+					} else if (file.fieldname === 'poster' && file.mimetype.startsWith('image/')) {
+						callback(null, true);
+					} else {
+						callback(new Error('Invalid file type for field'), false);
+					}
+				},
+			},
+		),
+	)
 	@HttpCode(201)
 	async uploadMusic(
-		@UploadedFile(new FileSizeValidationPipe()) file: Express.Multer.File,
+		@UploadedFiles() files: { music?: Express.Multer.File[]; poster?: Express.Multer.File[] },
 		@Body() uploadMusicDto: UploadMusicDto,
 	): Promise<MusicDocument> {
-		if (!file) {
-			throw new BadRequestException('File is required');
+		if (!files.music || files.music.length === 0) {
+			throw new BadRequestException('Music file is required');
 		}
 
-		return await this.musicService.uploadMusic(file, uploadMusicDto);
+		const musicFile = files.music[0];
+		const posterFile = files.poster?.[0];
+
+		return await this.musicService.uploadMusic(musicFile, posterFile, uploadMusicDto);
 	}
 
 	@Get('author/:author')
@@ -122,7 +160,7 @@ export class MusicController {
 	@UseGuards(JwtCombineAuthGuard)
 	@HttpCode(200)
 	async remove(@Param('id') id: string): Promise<{ id: string; message: string } | null> {
-		const deletedTrack = await this.musicService.remove(id);
+		const deletedTrack = await this.musicService.deleteMusic(id);
 		if (!deletedTrack) {
 			throw new NotFoundException('Track not found');
 		}

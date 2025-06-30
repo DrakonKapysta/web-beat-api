@@ -20,8 +20,14 @@ export class MusicModel {
 	@Prop({ required: true })
 	year: number;
 
+	@Prop({ type: String || null, required: false })
+	posterUrl?: string | null;
+
 	@Prop()
-	posterUrl?: string;
+	filePath: string;
+
+	@Prop()
+	fileHash: string;
 
 	@Prop({ type: Object })
 	metadata?: Record<string, any>;
