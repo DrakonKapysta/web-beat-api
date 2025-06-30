@@ -20,8 +20,8 @@ export class FileService {
 		return filePath;
 	}
 
-	async streamFile(fileName: string, res: Response): Promise<void> {
-		const filePath = path.join(this.uploadPath, fileName);
+	async streamFile(hash: string, res: Response): Promise<void> {
+		const filePath = path.join(this.uploadPath, hash);
 
 		if (!existsSync(filePath)) {
 			res.status(404).send('File not found');
@@ -53,7 +53,7 @@ export class FileService {
 			res.writeHead(200, {
 				'Content-Length': fileSize,
 				'Content-Type': mimeType,
-				'Content-Disposition': `inline; filename="${fileName}"`,
+				'Content-Disposition': `inline; filename="${hash}"`,
 			});
 
 			createReadStream(filePath).pipe(res);
