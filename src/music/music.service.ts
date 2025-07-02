@@ -9,9 +9,10 @@ import { FileService } from 'src/file/file.service';
 import { UploadMusicDto } from './dto/upload-music.dto';
 import { MusicDocument } from './music.model';
 import { Response } from 'express';
-import path, { extname } from 'path';
+import path, { extname, basename } from 'path';
 import { readFileSync, unlinkSync, renameSync, existsSync } from 'fs-extra';
 import * as crypto from 'crypto';
+import { IAudioMetadata, parseBuffer, parseFile } from 'music-metadata';
 
 @Injectable()
 export class MusicService {
@@ -64,6 +65,8 @@ export class MusicService {
 			renameSync(posterFile.path, newPosterPath);
 		}
 
+		const meta = await parseFile(newMusicPath);
+
 		const musicData = {
 			...uploadMusicDto,
 			posterUrl: posterFile ? newPosterPath : null,
@@ -72,6 +75,7 @@ export class MusicService {
 			metadata: {
 				...uploadMusicDto.metadata,
 				extension: extname(musicFile.originalname).slice(1),
+				duration: meta?.format.duration || 0,
 				originalName: musicFile.originalname,
 				mimeType: musicFile.mimetype,
 				fileSize: musicFile.size,
@@ -148,7 +152,7 @@ export class MusicService {
 			}
 
 			if (musicUsingPoster === 0 && music.posterUrl) {
-				const posterPath = `./static/posters/${path.basename(music.posterUrl)}`;
+				const posterPath = `./static/posters/${basename(music.posterUrl)}`;
 				if (existsSync(posterPath)) {
 					unlinkSync(posterPath);
 				}

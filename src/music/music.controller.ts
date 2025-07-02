@@ -20,8 +20,8 @@ import {
 	ValidationPipe,
 } from '@nestjs/common';
 import { MusicService } from './music.service';
-import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
-import { FileSizeValidationPipe } from 'src/pipes/file-size-validation.pipe';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import {} from 'src/pipes/file-size-validation.pipe';
 import { FileService } from 'src/file/file.service';
 import { Request, Response } from 'express';
 import { UploadMusicDto } from './dto/upload-music.dto';
@@ -31,6 +31,7 @@ import { diskStorage, Multer } from 'multer';
 import { extname } from 'path';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
+import { parseFile } from 'music-metadata';
 
 @Controller('music')
 @UsePipes(new ValidationPipe())
