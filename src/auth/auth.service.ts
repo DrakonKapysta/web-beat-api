@@ -21,12 +21,13 @@ export class AuthService {
 		private readonly jwtService: JwtService,
 	) {}
 
-	async createUser(dto: AuthDto): Promise<UserModel> {
+	async createUser(dto: AuthDto, roles?: string[]): Promise<UserModel> {
 		const salt = await genSalt(10);
 		const passwordHash = await hash(dto.password, salt);
 		const newUser = new this.userModel({
 			email: dto.login,
 			passwordHash,
+			roles,
 		});
 		return newUser.save();
 	}
@@ -35,7 +36,10 @@ export class AuthService {
 		return this.userModel.findOne({ email }).exec();
 	}
 
-	async validateUser(email: string, password: string): Promise<Pick<UserModel, '_id' | 'email'>> {
+	async validateUser(
+		email: string,
+		password: string,
+	): Promise<Pick<UserModel, '_id' | 'email' | 'roles'>> {
 		const user = await this.findUser(email);
 		if (!user) throw new NotFoundException(USER_NOT_FOUND_ERROR);
 
@@ -43,14 +47,15 @@ export class AuthService {
 
 		if (!isCorrectPassword) throw new UnauthorizedException(WRONG_PASSWORD_ERROR);
 
-		return { _id: user._id, email: user.email };
+		return { _id: user._id, email: user.email, roles: user.roles };
 	}
 
 	async login(
 		id: string,
 		email: string,
+		roles?: string[],
 	): Promise<{ user: { id: string; email: string }; access_token: string }> {
-		const payload = { id, email };
+		const payload = { id, email, roles };
 		return {
 			user: { id, email },
 			access_token: await this.jwtService.signAsync(payload),

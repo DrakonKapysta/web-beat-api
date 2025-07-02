@@ -2,10 +2,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
 import { Types } from 'mongoose';
 
-export interface UserDecoratorPayload extends Express.User {
-	id: string | Types.ObjectId;
-	email: string;
-}
+export interface UserDecoratorPayload extends Express.User {}
 
 export const User = createParamDecorator(
 	(data: keyof UserDecoratorPayload, ctx: ExecutionContext) => {
