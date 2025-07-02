@@ -29,6 +29,8 @@ import { MusicDocument } from './music.model';
 import { JwtCombineAuthGuard } from 'src/auth/guards/jwt.combine.guard';
 import { diskStorage, Multer } from 'multer';
 import { extname } from 'path';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/decorators/roles.decorator';
 
 @Controller('music')
 @UsePipes(new ValidationPipe())
@@ -49,7 +51,8 @@ export class MusicController {
 	}
 
 	@Get()
-	@UseGuards(JwtCombineAuthGuard)
+	@Roles(['user'])
+	@UseGuards(JwtCombineAuthGuard, RolesGuard)
 	async findAll(
 		@Query('page', new ParseIntPipe({ optional: true })) page?: number,
 		@Query('limit', new ParseIntPipe({ optional: true })) limit?: number,

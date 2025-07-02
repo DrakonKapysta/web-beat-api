@@ -24,7 +24,7 @@ export class AuthController {
 	async register(@Body() dto: AuthDto): Promise<{ id: string; email: string }> {
 		const existedUser = await this.authService.findUser(dto.login);
 		if (existedUser) throw new HttpException(ALREADY_EXISTS_ERROR, HttpStatus.BAD_REQUEST);
-		const res = await this.authService.createUser(dto);
+		const res = await this.authService.createUser(dto, ['user']);
 		const user = { email: res.email, id: res._id.toString() };
 		return user;
 	}
@@ -36,9 +36,9 @@ export class AuthController {
 		@Body() { login, password }: AuthDto,
 		@Res({ passthrough: true }) response: Response,
 	): Promise<{ user: { id: string; email: string }; access_token: string }> {
-		const { _id, email } = await this.authService.validateUser(login, password);
+		const { _id, email, roles } = await this.authService.validateUser(login, password);
 
-		const res = await this.authService.login(_id.toString(), email);
+		const res = await this.authService.login(_id.toString(), email, roles);
 
 		response.cookie('access_token', res.access_token, {
 			httpOnly: true,
