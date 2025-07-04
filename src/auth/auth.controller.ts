@@ -1,11 +1,13 @@
 import {
 	Body,
 	Controller,
+	Get,
 	HttpCode,
 	HttpException,
 	HttpStatus,
 	Post,
 	Res,
+	UseGuards,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -14,6 +16,8 @@ import { AuthService } from './auth.service';
 import { ALREADY_EXISTS_ERROR } from './auth.constants';
 import { UserModel } from './user.model';
 import { Response } from 'express';
+import { User } from 'src/decorators/user.decorator';
+import { JwtCombineAuthGuard } from './guards/jwt.combine.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -45,5 +49,11 @@ export class AuthController {
 		});
 
 		return res;
+	}
+
+	@Get('validate')
+	@UseGuards(JwtCombineAuthGuard)
+	async validate(@User() user: Express.User): Promise<Express.User> {
+		return user;
 	}
 }
