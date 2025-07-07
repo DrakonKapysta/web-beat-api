@@ -43,9 +43,13 @@ export class AuthController {
 		const { _id, email, roles } = await this.authService.validateUser(login, password);
 
 		const res = await this.authService.login(_id.toString(), email, roles);
-
 		response.cookie('access_token', res.access_token, {
 			httpOnly: true,
+			maxAge: 15 * 60 * 1000,
+		});
+		response.cookie('refresh_token', res.refresh_token, {
+			httpOnly: true,
+			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
 
 		return res;
@@ -55,5 +59,26 @@ export class AuthController {
 	@UseGuards(JwtCombineAuthGuard)
 	async validate(@User() user: Express.User): Promise<Express.User> {
 		return user;
+	}
+
+	@Get('refresh')
+	@UseGuards(JwtCombineAuthGuard)
+	async refresh(
+		@User() user: Express.User,
+		@Res({ passthrough: true }) response: Response,
+	): Promise<{ access_token: string; refresh_token: string }> {
+		const newTokens = await this.authService.refreshTokens(user.id, user.email, user.roles);
+
+		response.cookie('access_token', newTokens.access_token, {
+			httpOnly: true,
+			maxAge: 15 * 60 * 1000,
+		});
+
+		response.cookie('refresh_token', newTokens.refresh_token, {
+			httpOnly: true,
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+		});
+
+		return newTokens;
 	}
 }

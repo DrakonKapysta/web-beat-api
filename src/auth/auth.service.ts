@@ -13,12 +13,16 @@ import { Document, Model } from 'mongoose';
 import { compare, genSalt, hash } from 'bcrypt';
 import { USER_NOT_FOUND_ERROR, WRONG_PASSWORD_ERROR } from './auth.constants';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { RefreshModel } from './refresh.model';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		@InjectModel('User') private readonly userModel: Model<UserModel>,
+		@InjectModel('Refresh') private readonly refreshModel: Model<RefreshModel>,
 		private readonly jwtService: JwtService,
+		private readonly configService: ConfigService,
 	) {}
 
 	async createUser(dto: AuthDto, roles?: string[]): Promise<UserModel> {
@@ -54,11 +58,88 @@ export class AuthService {
 		id: string,
 		email: string,
 		roles?: string[],
-	): Promise<{ user: { id: string; email: string }; access_token: string }> {
+	): Promise<{ user: { id: string; email: string }; access_token: string; refresh_token: string }> {
 		const payload = { id, email, roles };
+
+		const access_token = await this.jwtService.signAsync(payload, {
+			expiresIn: '15m',
+		});
+
+		const refresh_token = await this.jwtService.signAsync(payload, {
+			secret: this.configService.get('JWT_REFRESH_SECRET'),
+			expiresIn: '7d',
+		});
+
+		await this.saveRefreshToken(id, refresh_token);
+
 		return {
 			user: { id, email },
-			access_token: await this.jwtService.signAsync(payload),
+			access_token,
+			refresh_token,
 		};
+	}
+
+	async generateRefreshToken(id: string, email: string, roles?: string[]): Promise<string> {
+		const payload = { id, email, roles };
+		const refresh_token = await this.jwtService.signAsync(payload, {
+			secret: this.configService.get('JWT_REFRESH_SECRET'),
+			expiresIn: '7d',
+		});
+		await this.saveRefreshToken(id, refresh_token);
+
+		return refresh_token;
+	}
+
+	async refreshTokens(
+		id: string,
+		email: string,
+		roles?: string[],
+	): Promise<{ access_token: string; refresh_token: string }> {
+		const payload = { id, email, roles };
+
+		const access_token = await this.jwtService.signAsync(payload, {
+			expiresIn: '15m',
+		});
+
+		const refresh_token = await this.jwtService.signAsync(payload, {
+			secret: this.configService.get('JWT_REFRESH_SECRET'),
+			expiresIn: '7d',
+		});
+
+		await this.updateRefreshToken(id, refresh_token);
+
+		return {
+			access_token,
+			refresh_token,
+		};
+	}
+
+	async saveRefreshToken(userId: string, refreshToken: string): Promise<void> {
+		await this.refreshModel.deleteMany({ userId });
+		const newRefreshToken = new this.refreshModel({
+			refreshToken,
+			userId,
+		});
+
+		await newRefreshToken.save();
+	}
+	private async updateRefreshToken(userId: string, newRefreshToken: string): Promise<void> {
+		await this.refreshModel.findOneAndUpdate(
+			{ userId },
+			{ refreshToken: newRefreshToken },
+			{ upsert: true },
+		);
+	}
+
+	async findRefreshToken(refreshToken: string): Promise<RefreshModel | null> {
+		return this.refreshModel.findOne({ refreshToken }).exec();
+	}
+
+	async removeRefreshToken(refreshToken: string): Promise<void> {
+		await this.refreshModel.deleteOne({ refreshToken });
+	}
+
+	async logout(userId: string): Promise<void> {
+		await this.refreshModel.deleteMany({ userId });
 	}
 }
