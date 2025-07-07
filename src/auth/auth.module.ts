@@ -9,10 +9,14 @@ import { getJWTConfig } from './../configs/jwt.config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtCookieStrategy } from './strategies/jwt.cookie.strategy';
+import { RefreshSchema } from './refresh.model';
 
 @Module({
 	imports: [
-		MongooseModule.forFeature([{ name: 'User', schema: UserShema }]),
+		MongooseModule.forFeature([
+			{ name: 'User', schema: UserShema },
+			{ name: 'Refresh', schema: RefreshSchema },
+		]),
 		JwtModule.registerAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],

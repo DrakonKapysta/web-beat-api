@@ -46,4 +46,16 @@ export class AuthController {
 
 		return res;
 	}
+<<<<<<< Updated upstream
+=======
+
+	@Get('validate')
+	@UseGuards(JwtCombineAuthGuard)
+	async validate(@User() user: Express.User): Promise<Express.User> {
+		return user;
+	}
+
+	@Get('refresh')
+	
+>>>>>>> Stashed changes
 }
