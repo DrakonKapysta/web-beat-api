@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MusicDocument, MusicModel } from './music.model';
-import { Model } from 'mongoose';
+import { Model, MongooseBaseQueryOptionKeys, QueryOptions } from 'mongoose';
 
 @Injectable()
 export class MusicRepository {
@@ -11,12 +11,19 @@ export class MusicRepository {
 		return createdMusic.save();
 	}
 
+	async countDocuments(options?: any): Promise<number> {
+		return this.musicModel.countDocuments(options).exec();
+	}
 	async findAll(): Promise<MusicDocument[]> {
 		return this.musicModel.find().sort({ createdAt: -1 }).exec();
 	}
 
 	async findById(id: string): Promise<MusicDocument | null> {
 		return this.musicModel.findById(id).exec();
+	}
+
+	async findByHash(hash: string): Promise<MusicDocument | null> {
+		return this.musicModel.findOne({ fileHash: hash }).exec();
 	}
 
 	async findByAuthor(author: string): Promise<MusicDocument[]> {

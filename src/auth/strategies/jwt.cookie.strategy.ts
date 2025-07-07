@@ -36,9 +36,7 @@ export class JwtCookieStrategy extends PassportStrategy(Strategy, 'jwt-cookie') 
 			throw new UnauthorizedException('Access token not found');
 		}
 		try {
-			const decoded = await this.jwtService.verifyAsync(access_token, {
-				secret: this.configService.get('JWT_SECRET'),
-			});
+			const decoded = await this.jwtService.verifyAsync(access_token);
 			return decoded;
 		} catch (error) {
 			if (refresh_token) {
@@ -47,6 +45,11 @@ export class JwtCookieStrategy extends PassportStrategy(Strategy, 'jwt-cookie') 
 						await this.jwtService.verifyAsync(refresh_token, {
 							secret: this.configService.get('JWT_REFRESH_SECRET'),
 						});
+
+					const storedRefreshToken = await this.authService.findRefreshToken(refresh_token);
+					if (!storedRefreshToken) {
+						throw new UnauthorizedException('Invalid refresh token');
+					}
 
 					const newTokens = await this.authService.refreshTokens(
 						refreshDecoded.id,

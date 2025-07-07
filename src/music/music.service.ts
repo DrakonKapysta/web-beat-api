@@ -1,10 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	ConflictException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { MusicRepository } from './music.repository';
 import { FileService } from 'src/file/file.service';
 import { UploadMusicDto } from './dto/upload-music.dto';
 import { MusicDocument } from './music.model';
 import { Response } from 'express';
-import { extname } from 'path';
+import path, { extname, basename } from 'path';
+import { readFileSync, unlinkSync, renameSync, existsSync } from 'fs-extra';
+import * as crypto from 'crypto';
+import { IAudioMetadata, parseBuffer, parseFile } from 'music-metadata';
 
 @Injectable()
 export class MusicService {
@@ -13,35 +21,64 @@ export class MusicService {
 		private readonly fileService: FileService,
 	) {}
 
-	async streamMusic(fileName: string, res: Response): Promise<void> {
+	async streamMusic(hash: string, res: Response): Promise<void> {
 		try {
-			await this.fileService.streamFile(fileName, res);
+			await this.fileService.streamFile(hash, res);
 		} catch (error) {
 			console.error('Error streaming music file:', error);
-			throw new NotFoundException(`Music file ${fileName} not found`);
+			throw new NotFoundException(`Music file ${hash} not found`);
 		}
 	}
 
+	private async calculateFileHash(filePath: string): Promise<string> {
+		const fileBuffer = readFileSync(filePath);
+		return crypto.createHash('md5').update(fileBuffer).digest('hex');
+	}
+
 	async uploadMusic(
-		file: Express.Multer.File,
+		musicFile: Express.Multer.File,
+		posterFile: Express.Multer.File | undefined,
 		uploadMusicDto: UploadMusicDto,
 	): Promise<MusicDocument> {
-		const filePath = await this.fileService.saveFile(file.originalname, file.buffer);
+		const fileHash = await this.calculateFileHash(musicFile.path);
+		const existingMusic = await this.musicRepository.findByHash(fileHash);
+
+		if (existingMusic) {
+			unlinkSync(musicFile.path);
+			if (posterFile) {
+				unlinkSync(posterFile.path);
+			}
+
+			throw new ConflictException('This file already exists in the system');
+		}
+
+		const ext = extname(musicFile.originalname);
+		const newMusicPath = `./uploads/music/${fileHash}${ext}`;
+
+		renameSync(musicFile.path, newMusicPath);
+
+		let newPosterPath: string | null = null;
+
+		if (posterFile) {
+			const posterExt = extname(posterFile.originalname);
+			newPosterPath = `./static/posters/${fileHash}${posterExt}`;
+			renameSync(posterFile.path, newPosterPath);
+		}
+
+		const meta = await parseFile(newMusicPath);
 
 		const musicData = {
-			title: uploadMusicDto.title,
-			author: uploadMusicDto.author,
-			album: uploadMusicDto.album,
-			genre: uploadMusicDto.genre,
-			year: uploadMusicDto.year,
-			posterUrl: uploadMusicDto.posterUrl,
+			...uploadMusicDto,
+			posterUrl: posterFile ? newPosterPath : null,
+			filePath: newMusicPath,
+			fileHash,
 			metadata: {
 				...uploadMusicDto.metadata,
-				filePath,
-				extension: extname(file.originalname).slice(1),
-				originalName: file.originalname,
-				mimeType: file.mimetype,
-				fileSize: file.size,
+				extension: extname(musicFile.originalname).slice(1),
+				duration: meta?.format.duration || 0,
+				originalName: musicFile.originalname,
+				mimeType: musicFile.mimetype,
+				fileSize: musicFile.size,
 			},
 		};
 
@@ -94,13 +131,32 @@ export class MusicService {
 		return updatedMusic;
 	}
 
-	async remove(id: string): Promise<MusicDocument | null> {
+	async deleteMusic(id: string): Promise<MusicDocument | null> {
 		const music = await this.musicRepository.findById(id);
 		if (!music) {
 			throw new NotFoundException(`Music with ID ${id} not found`);
 		}
+		const musicUsingFile = await this.musicRepository.countDocuments({
+			filePath: music.filePath,
+			_id: { $ne: id },
+		});
+		const musicUsingPoster = music.posterUrl
+			? await this.musicRepository.countDocuments({
+					posterUrl: music.posterUrl,
+					_id: { $ne: id },
+				})
+			: 0;
 		try {
-			await this.fileService.deleteFile(music.title);
+			if (musicUsingFile === 0 && existsSync(music.filePath)) {
+				unlinkSync(music.filePath);
+			}
+
+			if (musicUsingPoster === 0 && music.posterUrl) {
+				const posterPath = `./static/posters/${basename(music.posterUrl)}`;
+				if (existsSync(posterPath)) {
+					unlinkSync(posterPath);
+				}
+			}
 		} catch (error) {
 			console.error('Error deleting file:', error);
 		}
