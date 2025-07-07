@@ -21,6 +21,7 @@ export class JwtCookieStrategy extends PassportStrategy(Strategy, 'jwt-cookie') 
 	) {
 		super({
 			jwtFromRequest: (req: Request) => {
+				if (req.cookies?.access_token) return req.cookies.access_token;
 				return null;
 			},
 			ignoreExpiration: true,
@@ -41,6 +42,7 @@ export class JwtCookieStrategy extends PassportStrategy(Strategy, 'jwt-cookie') 
 		} catch (error) {
 			if (refresh_token) {
 				try {
+					console.log('Refreshing');
 					const refreshDecoded: { id: string; email: string; roles: string[] } =
 						await this.jwtService.verifyAsync(refresh_token, {
 							secret: this.configService.get('JWT_REFRESH_SECRET'),
