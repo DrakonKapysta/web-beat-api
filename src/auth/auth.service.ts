@@ -61,9 +61,7 @@ export class AuthService {
 	): Promise<{ user: { id: string; email: string }; access_token: string; refresh_token: string }> {
 		const payload = { id, email, roles };
 
-		const access_token = await this.jwtService.signAsync(payload, {
-			expiresIn: '15m',
-		});
+		const access_token = await this.jwtService.signAsync(payload);
 
 		const refresh_token = await this.jwtService.signAsync(payload, {
 			secret: this.configService.get('JWT_REFRESH_SECRET'),
@@ -97,9 +95,7 @@ export class AuthService {
 	): Promise<{ access_token: string; refresh_token: string }> {
 		const payload = { id, email, roles };
 
-		const access_token = await this.jwtService.signAsync(payload, {
-			expiresIn: '15m',
-		});
+		const access_token = await this.jwtService.signAsync(payload);
 
 		const refresh_token = await this.jwtService.signAsync(payload, {
 			secret: this.configService.get('JWT_REFRESH_SECRET'),
