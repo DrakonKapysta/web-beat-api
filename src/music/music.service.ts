@@ -13,6 +13,7 @@ import path, { extname, basename } from 'path';
 import { readFileSync, unlinkSync, renameSync, existsSync } from 'fs-extra';
 import * as crypto from 'crypto';
 import { IAudioMetadata, parseBuffer, parseFile } from 'music-metadata';
+import { getDurationWithFfprobe } from 'src/helpers/getDurationWithFfprobe';
 
 @Injectable()
 export class MusicService {
@@ -66,6 +67,11 @@ export class MusicService {
 		}
 
 		const meta = await parseFile(newMusicPath);
+		let duration: number | null = meta?.format.duration || null;
+
+		if (!duration || duration === 0) {
+			duration = await getDurationWithFfprobe(newMusicPath);
+		}
 
 		const musicData = {
 			...uploadMusicDto,
@@ -75,7 +81,7 @@ export class MusicService {
 			metadata: {
 				...uploadMusicDto.metadata,
 				extension: extname(musicFile.originalname).slice(1),
-				duration: meta?.format.duration || 0,
+				duration: duration || 0,
 				originalName: musicFile.originalname,
 				mimeType: musicFile.mimetype,
 				fileSize: musicFile.size,
