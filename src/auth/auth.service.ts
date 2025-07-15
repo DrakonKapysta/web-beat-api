@@ -58,7 +58,11 @@ export class AuthService {
 		id: string,
 		email: string,
 		roles?: string[],
-	): Promise<{ user: { id: string; email: string }; access_token: string; refresh_token: string }> {
+	): Promise<{
+		user: { id: string; email: string; roles: string[] | undefined };
+		access_token: string;
+		refresh_token: string;
+	}> {
 		const payload = { id, email, roles };
 
 		const access_token = await this.jwtService.signAsync(payload);
@@ -71,7 +75,7 @@ export class AuthService {
 		await this.saveRefreshToken(id, refresh_token);
 
 		return {
-			user: { id, email },
+			user: { id, email, roles },
 			access_token,
 			refresh_token,
 		};

@@ -10,6 +10,7 @@ import { FileModule } from './file/file.module';
 import { PlaylistModule } from './playlist/playlist.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { FavoriteModule } from './favorite/favorite.module';
 
 @Module({
 	imports: [
@@ -28,6 +29,7 @@ import { join } from 'path';
 			serveRoot: '/static/posters',
 			exclude: ['/api*'],
 		}),
+		FavoriteModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
